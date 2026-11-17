@@ -1,0 +1,439 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Mi Luz PVPC</title>
+
+
+
+
+
+    <style>
+{
+    display: fle.resumenx;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.resumen .tarjeta {
+    flex: 1;
+    margin-top: 0;
+    min-width: 0;
+}
+
+.barata {
+    background: #e0f7e9;
+}
+
+.cara {
+    background: #fde8e8;
+}
+
+.barata h2 {
+    color: #18864b;
+}
+
+.cara h2 {
+    color: #cc3333;
+}
+
+@media (max-width: 600px) {
+    .resumen {
+        flex-direction: column;
+    }
+}
+
+#consumo {
+    width: 110px;
+    padding: 12px;
+    font-size: 20px;
+    text-align: center;
+    border: 2px solid #1769aa;
+    border-radius: 10px;
+}
+
+#ahorro {
+    color: #18864b;
+    font-size: 26px;
+}   
+body {
+    font-family: Arial, sans-serif;
+    background: #eef3f8;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+}
+
+h1 {
+    color: #173c65;
+}
+
+.tarjeta {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 12px #00000015;
+}
+
+.precio {
+    font-size: 38px;
+    color: green;
+    font-weight: bold;
+}
+
+button {
+    background: #1769aa;
+    color: white;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+   .grafico-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.hora {
+    width: 45px;
+    font-size: 13px;
+    text-align: left;
+}
+
+.barra-fondo {
+    flex: 1;
+    background: #eeeeee;
+    height: 18px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.barra {
+    height: 100%;
+    border-radius: 8px;
+}
+
+.valor {
+    width: 75px;
+    font-size: 12px;
+    text-align: right;
+}
+
+.verde {
+    background: #2ead72;
+}
+
+.amarillo {
+    background: #e6af3b;
+}
+
+.rojo {
+    background: #d95858;
+}
+    </style>
+  
+</head>
+
+<body>
+
+    <h1>⚡ Mi Luz PVPC</h1>
+    <p>Precios reales de la electricidad</p>
+
+<div class="resumen">
+
+    <div class="tarjeta barata">
+        <h3>🟢 Hora más barata</h3>
+        <h2 id="horaBarata">--:--</h2>
+        <p id="precioBarato">-- €/kWh</p>
+    </div>
+
+    <div class="tarjeta cara">
+        <h3>🔴 Hora más cara</h3>
+        <h2 id="horaCara">--:--</h2>
+        <p id="precioCaro">-- €/kWh</p>
+    </div>
+
+</div>
+
+    <div class="tarjeta">
+        <h2>Precio actual</h2>
+
+        <p class="precio" id="precio">-- €/kWh</p>
+        <p id="mensaje">Cargando datos...</p>
+
+        <button onclick="obtenerPrecios()">
+            Actualizar precios
+        </button>
+    </div>
+
+<div class="tarjeta">
+
+    <h2>💰 Calculadora de ahorro</h2>
+
+    <p>¿Cuántos kWh consume tu aparato?</p>
+
+    <input
+        type="number"
+        id="consumo"
+        value="2"
+        min="0"
+        step="0.1"
+    >
+
+    <p>kWh</p>
+
+    <button onclick="calcularAhorro()">
+        Calcular ahorro
+    </button>
+
+    <h3 id="costeBarato">Hora barata: -- €</h3>
+
+    <h3 id="costeCaro">Hora cara: -- €</h3>
+
+    <h2 id="ahorro">Ahorro: -- €</h2>
+
+</div>
+
+    <div class="tarjeta">
+        <h2>📊 Precios de hoy</h2>
+        <div id="lista"></div>
+    </div>
+
+    <p>
+        Datos: Preciluz, a partir de REE/ESIOS
+    </p>
+
+
+    <script>
+
+        async function obtenerPrecios() {
+
+            try {
+                const respuesta = await fetch(
+                    "https://preciluz.com/datos/precio-hoy.json"
+                );
+
+                if (!respuesta.ok) {
+                    throw new Error("Error de conexión");
+                }
+
+                const datos = await respuesta.json();
+
+                const ahora = new Date();
+
+                const fechaHoy = new Intl.DateTimeFormat(
+                    "en-CA",
+                    { timeZone: "Europe/Madrid",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit" }
+                ).format(ahora);
+
+                if (datos.fecha !== fechaHoy) {
+                    throw new Error("Los precios no son de hoy");
+                }
+
+                const horaActual = Number(
+                    new Intl.DateTimeFormat("en-GB", {
+                        timeZone: "Europe/Madrid",
+                        hour: "2-digit",
+                        hourCycle: "h23"
+                    }).format(ahora)
+                );
+
+                const actual = datos.horas.find(
+                    item => item.hora === horaActual
+                );
+
+                if (!actual) {
+                    throw new Error("No hay precio para esta hora");
+                }
+
+                document.getElementById("precio")
+                    .innerText =
+                    actual.pvpc.toFixed(5) + " €/kWh";
+
+                document.getElementById("mensaje")
+                    .innerText =
+                    "Precio de " + horaActual + ":00 a " +
+                    (horaActual + 1) + ":00";
+
+                const lista = document.getElementById("lista");
+                lista.innerHTML = "";
+
+// Buscar el precio más barato del día
+const masBarata = datos.horas.reduce(
+    (minimo, actual) =>
+        actual.pvpc < minimo.pvpc ? actual : minimo
+);
+
+// Buscar el precio más caro del día
+const masCara = datos.horas.reduce(
+    (maximo, actual) =>
+        actual.pvpc > maximo.pvpc ? actual : maximo
+);
+precioMinimo = masBarata.pvpc;
+precioMaximoDia = masCara.pvpc;
+// Mostrar la hora más barata
+document.getElementById("horaBarata")
+    .innerText =
+    String(masBarata.hora).padStart(2, "0") + ":00";
+
+document.getElementById("precioBarato")
+    .innerText =
+    masBarata.pvpc.toFixed(5) + " €/kWh";
+
+// Mostrar la hora más cara
+document.getElementById("horaCara")
+    .innerText =
+    String(masCara.hora).padStart(2, "0") + ":00";
+
+document.getElementById("precioCaro")
+    .innerText =
+    masCara.pvpc.toFixed(5) + " €/kWh";
+
+                
+const preciosOrdenados = [...datos.horas]
+    .map((item, indice) => ({
+        precio: item.pvpc,
+        indice: indice
+    }))
+    .sort((a, b) => a.precio - b.precio);
+
+const posiciones = new Array(datos.horas.length);
+
+preciosOrdenados.forEach((item, posicion) => {
+    posiciones[item.indice] = posicion;
+});
+
+const precioMaximo = Math.max(
+    ...datos.horas.map(item => item.pvpc)
+);
+
+datos.horas.forEach(function(item, indice) {
+
+    // Decidir el color
+    let color;
+
+    const posicion = posiciones[indice];
+    const total = datos.horas.length;
+
+    if (posicion < total / 3) {
+        color = "verde";
+    } else if (posicion < 2 * total / 3) {
+        color = "amarillo";
+    } else {
+        color = "rojo";
+    }
+
+    // Calcular el tamaño de la barra
+    const porcentaje =
+        (item.pvpc / precioMaximo) * 100;
+
+    // Crear la fila
+    const fila = document.createElement("div");
+    fila.className = "grafico-fila";
+
+    // Escribir la hora
+    const hora = document.createElement("span");
+    hora.className = "hora";
+    hora.textContent =
+        String(item.hora).padStart(2, "0") + ":00";
+
+    // Crear el fondo gris
+    const fondo = document.createElement("div");
+    fondo.className = "barra-fondo";
+
+    // Crear la barra de color
+    const barra = document.createElement("div");
+    barra.className = "barra " + color;
+    barra.style.width = porcentaje + "%";
+
+    // Escribir el precio
+    const valor = document.createElement("span");
+    valor.className = "valor";
+    valor.textContent =
+        item.pvpc.toFixed(3) + " €";
+
+    // Unir las piezas
+    fondo.appendChild(barra);
+
+    fila.appendChild(hora);
+    fila.appendChild(fondo);
+    fila.appendChild(valor);
+
+    // Mostrar la fila
+    lista.appendChild(fila);
+
+});
+
+
+            } catch (error) {
+                document.getElementById("mensaje")
+                    .innerText =
+                    "No se pudieron cargar los precios: " +
+                    error.message;
+
+                document.getElementById("precio")
+                    .innerText = "-- €/kWh";
+
+                document.getElementById("lista")
+                    .textContent = "";
+            }
+        }
+
+        obtenerPrecios();
+
+function calcularAhorro() {
+
+    // Leer los kWh introducidos
+    const consumo = Number(
+        document.getElementById("consumo").value
+    );
+
+    // Comprobar que el consumo es válido
+    if (!Number.isFinite(consumo) || consumo < 0) {
+        alert("Introduce un consumo válido");
+        return;
+    }
+
+    // Comprobar que tenemos los precios
+    if (precioMinimo <= 0 || precioMaximoDia <= 0) {
+        alert("Primero deben cargarse los precios");
+        return;
+    }
+
+    // Calcular los costes
+    const costeBarato = consumo * precioMinimo;
+    const costeCaro = consumo * precioMaximoDia;
+
+    // Calcular la diferencia
+    const ahorro = costeCaro - costeBarato;
+
+    // Mostrar los resultados
+    document.getElementById("costeBarato")
+        .innerText =
+        "Hora barata: " + costeBarato.toFixed(2) + " €";
+
+    document.getElementById("costeCaro")
+        .innerText =
+        "Hora cara: " + costeCaro.toFixed(2) + " €";
+
+    document.getElementById("ahorro")
+        .innerText =
+        "Diferencia: " + ahorro.toFixed(2) + " €";
+}
+
+    </script>
+
+</body>
+</html>
